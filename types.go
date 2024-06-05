@@ -6,7 +6,7 @@ const (
 	Empty CellState = iota
 	Tile
 	American
-	Contintental
+	Continental
 	Festival
 	Imperial
 	Luxor
@@ -17,18 +17,39 @@ const (
 type HotelType int
 
 const (
-	AmericanHotel     HotelType = HotelType(American)
-	ContintentalHotel HotelType = HotelType(Contintental)
-	FestivalHotel     HotelType = HotelType(Festival)
-	ImperialHotel     HotelType = HotelType(Imperial)
-	LuxorHotel        HotelType = HotelType(Luxor)
-	TowerHotel        HotelType = HotelType(Tower)
-	WorldwideHotel    HotelType = HotelType(Worldwide)
+	AmericanHotel    HotelType = HotelType(American)
+	ContinentalHotel HotelType = HotelType(Continental)
+	FestivalHotel    HotelType = HotelType(Festival)
+	ImperialHotel    HotelType = HotelType(Imperial)
+	LuxorHotel       HotelType = HotelType(Luxor)
+	TowerHotel       HotelType = HotelType(Tower)
+	WorldwideHotel   HotelType = HotelType(Worldwide)
 )
+
+func (h HotelType) String() string {
+	switch h {
+	case AmericanHotel:
+		return "American"
+	case ContinentalHotel:
+		return "Continental"
+	case FestivalHotel:
+		return "Festival"
+	case ImperialHotel:
+		return "Imperial"
+	case LuxorHotel:
+		return "Luxor"
+	case TowerHotel:
+		return "Tower"
+	case WorldwideHotel:
+		return "Worldwide"
+	default:
+		return "Unknown"
+	}
+}
 
 var AllHotelTypes = []HotelType{
 	AmericanHotel,
-	ContintentalHotel,
+	ContinentalHotel,
 	FestivalHotel,
 	ImperialHotel,
 	LuxorHotel,
@@ -73,6 +94,10 @@ type PlayerActionChooseHotelPayload struct {
 	HotelType HotelType
 }
 
+type PlayerActionPurchaseSharePayload struct {
+	HotelType HotelType
+}
+
 func NewPlaceTileAction(tile int) PlayerAction {
 	return PlayerAction{
 		Type: PlayerActionPlaceTile,
@@ -86,6 +111,15 @@ func NewChooseHotelAction(hotelType HotelType) PlayerAction {
 	return PlayerAction{
 		Type: PlayerActionChooseHotel,
 		Payload: PlayerActionChooseHotelPayload{
+			HotelType: hotelType,
+		},
+	}
+}
+
+func NewPurchaseShareAction(hotelType HotelType) PlayerAction {
+	return PlayerAction{
+		Type: PlayerActionPurchaseShare,
+		Payload: PlayerActionPurchaseSharePayload{
 			HotelType: hotelType,
 		},
 	}
@@ -108,6 +142,10 @@ type AvailableActionChooseTilePayload struct {
 
 type AvailableActionChooseHotelPayload struct {
 	Hotels []*Hotel
+}
+
+type AvailableActionChooseSharePayload struct {
+	AvailableShares []AvailableShare
 }
 
 func NewChooseTileAvailableAction(tiles []int) AvailableAction {
@@ -134,4 +172,11 @@ func NewChooseHotelAvailableAction(hotels []*Hotel) AvailableAction {
 	}
 }
 
-//func NewChooseShareAvailableAction()
+func NewChooseShareAvailableAction(shares []AvailableShare) AvailableAction {
+	return AvailableAction{
+		Type: PlayerActionPurchaseShare,
+		Payload: AvailableActionChooseSharePayload{
+			AvailableShares: shares,
+		},
+	}
+}

@@ -4,22 +4,27 @@ import (
 	"slices"
 )
 
-const maxTilesInHand = 6
+const (
+	tileRackSize = 6
+	startingCash = 6000
+)
 
 type Player struct {
 	Id    string
 	Tiles []int
+	Cash  int
 }
 
 func NewPlayer(id string) *Player {
 	return &Player{
 		Id:    id,
 		Tiles: make([]int, 0),
+		Cash:  startingCash,
 	}
 }
 
 func (p *Player) fillTileRack(tileBag *TileBag) {
-	for len(p.Tiles) < maxTilesInHand {
+	for len(p.Tiles) < tileRackSize {
 		tile, err := tileBag.drawTile()
 		if err != nil {
 			break

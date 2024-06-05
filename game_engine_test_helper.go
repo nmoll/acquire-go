@@ -8,9 +8,9 @@ import (
 )
 
 type ExpectedGameState struct {
-	board            string
-	availableActions string
-	currentPlayer    string
+	board           string
+	availableAction string
+	currentPlayer   string
 }
 
 type GameEngineTestHelper struct {
@@ -52,7 +52,7 @@ func (h *GameEngineTestHelper) assertErrorWithAction(action PlayerAction, errMes
 func (h *GameEngineTestHelper) assertState(messagePrefix string, expected ExpectedGameState) *GameEngineTestHelper {
 	h.failMessagePrefix = messagePrefix
 	h.assertBoardState(expected.board)
-	h.assertAvailableActions(expected.availableActions)
+	h.assertAvailableAction(expected.availableAction)
 	h.assertCurrentPlayer(expected.currentPlayer)
 	return h
 }
@@ -64,38 +64,43 @@ func (h *GameEngineTestHelper) assertBoardState(want string) {
 	}
 }
 
-func (h *GameEngineTestHelper) assertAvailableActions(want string) {
+func (h *GameEngineTestHelper) assertAvailableAction(want string) {
 	got := ""
 
-	for _, action := range h.engine.AvailableActions {
-		switch action.Type {
-		case PlayerActionPlaceTile:
-			got += "Place Tile\n"
-			tiles := action.Payload.(AvailableActionChooseTilePayload).Tiles
-			for _, tile := range tiles {
-				got += getTileDisplay(tile) + " "
-			}
-		case PlayerActionChooseHotel:
-			got += "Choose Hotel\n"
+	hotelChar := map[HotelType]string{
+		AmericanHotel:    "A",
+		ContinentalHotel: "C",
+		FestivalHotel:    "F",
+		ImperialHotel:    "I",
+		LuxorHotel:       "L",
+		TowerHotel:       "T",
+		WorldwideHotel:   "W",
+	}
 
-			hotelChar := map[HotelType]string{
-				AmericanHotel:     "A",
-				ContintentalHotel: "C",
-				FestivalHotel:     "F",
-				ImperialHotel:     "I",
-				LuxorHotel:        "L",
-				TowerHotel:        "T",
-				WorldwideHotel:    "W",
-			}
+	availableAction := h.engine.AvailableAction
 
-			for _, hotel := range action.Payload.(AvailableActionChooseHotelPayload).Hotels {
-				got += hotelChar[hotel.hotelType] + " "
-			}
-		case PlayerActionPurchaseShare:
-			got += "Purchase Share\n"
-		case PlayerActionEndTurn:
-			got += "End Turn\n"
+	switch availableAction.Type {
+	case PlayerActionPlaceTile:
+		got += "Place Tile\n"
+		tiles := availableAction.Payload.(AvailableActionChooseTilePayload).Tiles
+		for _, tile := range tiles {
+			got += getTileDisplay(tile) + " "
 		}
+	case PlayerActionChooseHotel:
+		got += "Choose Hotel\n"
+
+		for _, hotel := range availableAction.Payload.(AvailableActionChooseHotelPayload).Hotels {
+			got += hotelChar[hotel.hotelType] + " "
+		}
+	case PlayerActionPurchaseShare:
+		got += "Purchase Share\n"
+
+		for _, available := range availableAction.Payload.(AvailableActionChooseSharePayload).AvailableShares {
+			got += hotelChar[available.HotelType]
+		}
+
+	case PlayerActionEndTurn:
+		got += "End Turn\n"
 	}
 
 	if stripWhitespace(got) != stripWhitespace(want) {
@@ -104,7 +109,18 @@ func (h *GameEngineTestHelper) assertAvailableActions(want string) {
 }
 
 func (h *GameEngineTestHelper) assertCurrentPlayer(want string) *GameEngineTestHelper {
-	got := h.engine.PlayerManager.CurrentPlayer().Id
+	player := h.engine.PlayerManager.CurrentPlayer()
+	got := player.Id + " | $" + strconv.Itoa(player.Cash)
+
+	playerShares := h.engine.StockBroker.GetPlayerShares(player)
+	got += " A:" + strconv.Itoa(playerShares.Count(AmericanHotel))
+	got += " C:" + strconv.Itoa(playerShares.Count(ContinentalHotel))
+	got += " F:" + strconv.Itoa(playerShares.Count(FestivalHotel))
+	got += " I:" + strconv.Itoa(playerShares.Count(ImperialHotel))
+	got += " L:" + strconv.Itoa(playerShares.Count(LuxorHotel))
+	got += " T:" + strconv.Itoa(playerShares.Count(TowerHotel))
+	got += " W:" + strconv.Itoa(playerShares.Count(WorldwideHotel))
+
 	if stripWhitespace(want) != stripWhitespace(got) {
 		h.fail(fmt.Sprintf("Current player does not match. \nGot: \n%s \nwant\n%s", got, want))
 	}
@@ -119,15 +135,15 @@ func boardStateToString(boardState []CellState) string {
 	diagram := ""
 	for idx, state := range boardState {
 		cellStateMap := map[CellState]string{
-			Empty:        "-",
-			Tile:         "0",
-			American:     "A",
-			Contintental: "C",
-			Festival:     "F",
-			Imperial:     "I",
-			Luxor:        "L",
-			Tower:        "T",
-			Worldwide:    "W",
+			Empty:       "-",
+			Tile:        "0",
+			American:    "A",
+			Continental: "C",
+			Festival:    "F",
+			Imperial:    "I",
+			Luxor:       "L",
+			Tower:       "T",
+			Worldwide:   "W",
 		}
 
 		var separator string
